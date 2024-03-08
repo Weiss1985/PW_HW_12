@@ -1,7 +1,9 @@
+from sqlalchemy.sql import  select
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, status
 from fastapi import  HTTPException, Depends
 from sqlalchemy import text
+from src.database.models import Note
 from src.database.db import get_db
 import pathlib
 from fastapi.staticfiles import StaticFiles
@@ -22,17 +24,15 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
-)
+    allow_headers=["*"]         )
 
 
-app.add_middleware(CustomHeaderMiddleware)
+# app.add_middleware(CustomHeaderMiddleware)
 
-app.include_router(auth.router, prefix='/api/auth')
+app.include_router(auth.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')
-# app.include_router(contacts.router, prefix='/api/signin')
-app.include_router(tags.router, prefix='/api')
-app.include_router(notes.router, prefix='/api')
+# app.include_router(tags.router, prefix='/api')
+# app.include_router(notes.router, prefix='/api')
 
 
 @app.get("/")

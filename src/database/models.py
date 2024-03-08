@@ -1,5 +1,5 @@
-
-from sqlalchemy import Column, Integer, String, Boolean, func, Table, Date
+import enum
+from sqlalchemy import Column, Integer, String, Boolean, func, Table, Date, Enum
 from sqlalchemy.orm import relationship, DeclarativeBase
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import DateTime
@@ -7,6 +7,12 @@ from sqlalchemy.sql.sqltypes import DateTime
 
 class Base(DeclarativeBase):
     pass
+
+
+class Role(enum.Enum):
+    admin: str = "admin"
+    moderator: str = "moderator"
+    user: str = "user"
 
 
 class Contact(Base):
@@ -18,6 +24,10 @@ class Contact(Base):
     birthday = Column(Date, nullable=True)
     addition = Column(String(300), nullable=True)
     created_at = Column('created_at', DateTime, default=func.now())
+    updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
+
+    user_id =  Column(Integer, ForeignKey("users.id"),nullable=True)
+    user = relationship("User" , backref="contacts", lazy="joined")
 
 
 note_m2m_tag = Table(
@@ -39,6 +49,7 @@ class User(Base):
     refresh_token = Column(String(255), nullable=True)
     created_at = Column('created_at', DateTime, default=func.now(), nullable=True)
     updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
+    role = Column("role", Enum(Role), default=Role.user) #, nullable=True
 
 
 class Note(Base):
@@ -48,8 +59,8 @@ class Note(Base):
     description = Column(String(150), nullable=False)
     done = Column(Boolean, default=False)
     tags = relationship("Tag", secondary=note_m2m_tag, backref="notes")
-    user_id = Column(Integer, ForeignKey("users.id",  ondelete="CASCADE"))
-    user = relationship("User", backref="notes", lazy="joined")
+    # user_id = Column(Integer, ForeignKey("users.id",  ondelete="CASCADE"))
+    # user = relationship("User", backref="notes", lazy="joined")
     created_at = Column('created_at', DateTime, default=func.now(), nullable=True)
     updated_at = Column('updated_at', DateTime, default=func.now(), onupdate=func.now())
 

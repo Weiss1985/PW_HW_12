@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, EmailStr, PastDate
 
+from src.database.models import Role
+
 
 class UserModel(BaseModel):
     username: str = Field(max_length=50, min_length=3)
@@ -13,8 +15,9 @@ class UserResponse(UserModel):
     id: int
     username: str
     mail: str  
-    avatar: str 
+    avatar: str | None
     created_at: datetime
+    role: Role | None
 
     class Config:
         from_attributes = True
@@ -30,7 +33,7 @@ class UsertUpdate(UserModel):
 
     
 class TokenModel(BaseModel):
-    acses_token: str 
+    access_token: str 
     refresh_token: str 
     token_type: str = "bearer"
 

@@ -13,3 +13,11 @@ class CustomHeaderMiddleware(BaseHTTPMiddleware):
         process_time = time.time() - start_time
         response.headers["X-Process-Time"] = str(process_time)
         return response
+        return None
+
+
+
+
+
+
+

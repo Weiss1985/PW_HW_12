@@ -1,6 +1,9 @@
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, EmailStr, PastDate
+from src.database.models import User
+
+from src.schemas.auth import UserResponse
 
 
 class ContactModel(BaseModel):
@@ -18,7 +21,10 @@ class ContactResponse(ContactModel):
     mail: EmailStr  
     birthday: PastDate 
     addition: str 
-    created_at: datetime
+    created_at: datetime | None
+    updated_at: datetime | None
+    user: UserResponse | None
+    # user_id: int
 
     class Config:
         orm_mode = True

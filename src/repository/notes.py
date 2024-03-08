@@ -1,51 +1,64 @@
 from typing import List
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import select
 
 from src.database.models import Note, Tag
 from src.schemas.notes import NoteModel, NoteUpdate, NoteStatusUpdate
 
 
 async def get_notes(skip: int, limit: int, db: Session) -> List[Note]:
-    return db.query(Note).offset(skip).limit(limit).all()
+    query = select(Note).offset(skip).limit(limit)
+    contacts = await db.execute(query)
+    return contacts.scalars().all()
 
 
 async def get_note(note_id: int, db: Session) -> Note:
-    return db.query(Note).filter(Note.id == note_id).first()
+    query = select(Note).filter_by(id=note_id)
+    contact = await db.execute(query)
+    return contact.scalar_one_or_none()
 
 
-async def create_note(body: NoteModel, db: Session) -> Note:
-    tags = db.query(Tag).filter(Tag.id.in_(body.tags)).all()
-    note = Note(title=body.title, description=body.description, tags=tags)
+async def create_note(body: NoteModel, db: Session) -> Note|None:
+    note = Note(**body.model_dump(exclude_unset=True)) 
     db.add(note)
-    db.commit()
-    db.refresh(note)
+    await db.commit()
+    # await db.refresh(note)
     return note
 
 
 async def remove_note(note_id: int, db: Session) -> Note | None:
-    note = db.query(Note).filter(Note.id == note_id).first()
+    query = select(Note).filter_by(id=note_id)
+    note = await db.execute(query)
+    note = note.scalar_one_or_none()
     if note:
-        db.delete(note)
-        db.commit()
+        await db.delete(note)
+        await db.commit()
     return note
 
 
 async def update_note(note_id: int, body: NoteUpdate, db: Session) -> Note | None:
-    note = db.query(Note).filter(Note.id == note_id).first()
+    query = select(Note).filter_by(id=note_id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
     if note:
-        tags = db.query(Tag).filter(Tag.id.in_(body.tags)).all()
+        stmt = select([Tag]).where(Tag.id.in_(body.tags))
+        tags = db.execute(stmt).fetchall()
         note.title = body.title
         note.description = body.description
         note.done = body.done
         note.tags = tags
-        db.commit()
+        await db.commit()
+        await db.refresh(note)
     return note
 
 
 async def update_status_note(note_id: int, body: NoteStatusUpdate, db: Session) -> Note | None:
-    note = db.query(Note).filter(Note.id == note_id).first()
+    query = select(Note).filter_by(id=note_id)
+    result = await db.execute(query)
+    note = result.scalar_one_or_none()
     if note:
         note.done = body.done
-        db.commit()
+        await db.commit()
+        await db.refresh(note)
     return note

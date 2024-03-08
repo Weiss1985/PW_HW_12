@@ -1,5 +1,5 @@
 from typing import List
-
+from sqlalchemy.sql import select
 from sqlalchemy.orm import Session
 
 from src.database.models import Tag
@@ -7,32 +7,41 @@ from src.schemas.tags import TagModel
 
 
 async def get_tags(skip: int, limit: int, db: Session) -> List[Tag]:
-    return db.query(Tag).offset(skip).limit(limit).all()
+    query = select(Tag).offset(skip).limit(limit)
+    contacts = await db.execute(query)
+    return contacts.scalars().all()
 
 
 async def get_tag(tag_id: int, db: Session) -> Tag:
-    return db.query(Tag).filter(Tag.id == tag_id).first()
+    query = select(Tag).filter_by(id=tag_id)
+    contact = await db.execute(query)
+    return contact.scalar_one_or_none()
 
 
 async def create_tag(body: TagModel, db: Session) -> Tag:
-    tag = Tag(name=body.name)
+    tag = Tag(**body.model_dump(exclude_unset=True)) 
     db.add(tag)
-    db.commit()
-    db.refresh(tag)
+    await db.commit()
+    await db.refresh(tag)
     return tag
 
 
 async def update_tag(tag_id: int, body: TagModel, db: Session) -> Tag | None:
-    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    query = select(Tag).filter_by(id=tag_id)
+    result = await db.execute(query)
+    tag = result.scalar_one_or_none()
     if tag:
         tag .name = body.name
-        db.commit()
+    await db.commit()
+    await db.refresh(tag)
     return tag
 
 
 async def remove_tag(tag_id: int, db: Session)  -> Tag | None:
-    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    query = select(Tag).filter_by(id=tag_id)
+    tag = await db.execute(query)
+    tag = tag.scalar_one_or_none()
     if tag:
-        db.delete(tag)
-        db.commit()
+        await db.delete(tag)
+        await db.commit()
     return tag
